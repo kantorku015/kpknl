@@ -1,0 +1,207 @@
+CREATE OR REPLACE VIEW 
+iku_target_header
+as select
+a.*,
+b.seksi_pic,b.porsi_pic,
+c.id as id_header
+FROM
+iku_target as a,
+iku_pic as b,
+iku_header as c
+WHERE
+a.id_pic = b.id
+and
+b.id_head = c.id
+
+===================================
+
+CREATE OR REPLACE VIEW 
+iku_capaian_header
+as select
+a.*,
+b.seksi_pic,b.porsi_pic,
+c.id as id_header
+FROM
+iku_capaian as a,
+iku_pic as b,
+iku_header as c
+WHERE
+a.id_pic = b.id
+and
+b.id_head = c.id
+
+====================================
+
+CREATE OR REPLACE VIEW
+tiket_seksi
+as select
+a.ticket_code, a.tgl_terima, a.status,
+b.id_seksi
+FROM
+request_header as a,
+kpknl_layanan as b
+WHERE
+a.id_layanan = b.id
+
+====================================
+
+daftar dokumen lengkap/belum/
+CREATE OR REPLACE VIEW
+dok_summary
+as select
+a.no_dokumen,
+sum(a.credit) credit,
+sum(a.debit) debit,
+(sum(a.credit)-sum(a.debit)) saldo
+FROM
+rekening_penerimaan as a
+WHERE
+a.no_dokumen is not NULL
+AND
+a.no_dokumen <> ''
+AND
+a.no_dokumen <> '0'
+GROUP BY no_dokumen
+
+======================================
+
+sudah lengkap
+CREATE OR REPLACE VIEW
+dok_summary_lengkap
+as select
+a.no_dokumen
+FROM
+dok_summary as a
+WHERE
+a.saldo = 0
+
+belum lengkap
+CREATE OR REPLACE VIEW
+dok_summary_belum_lengkap
+as select
+a.no_dokumen
+FROM
+dok_summary as a
+WHERE
+a.saldo <> 0
+
+===========================================
+
+daftar nomor kuitansi per tahun
+AWAL
+select
+`a`
+.
+`kuitansi_no`
+AS
+`kuitansi_no`
+,
+`b`
+.
+`rl_no`
+AS
+`rl_no`
+,
+year
+(
+`b`
+.
+`rl_tgl`
+)
+AS
+`tahun`
+from
+(
+`kpknl_backup`
+.
+`lelang_obyek`
+`a`
+join
+`kpknl_backup`
+.
+`lelang_risalah`
+`b`
+)
+where
+(
+`a`
+.
+`rl_no`
+=
+`b`
+.
+`rl_no`
+)
+
+DIUBAH JADI
+CREATE OR REPLACE VIEW
+daftar_kuitansi
+as select
+a.kuitansi_no, a.rl_no AS id_rl,
+b.rl_no, YEAR(b.rl_tgl) tahun
+FROM
+lelang_obyek as a, 
+lelang_risalah as b
+WHERE
+a.rl_no = b.id
+
+model daftar kuitansi update
+
+
+===============================================
+SELECT CONCAT("ALTER DEFINER=`dilanid`@`localhost` VIEW ", table_name, " AS ", view_definition, ";") FROM information_schema.views WHERE table_schema='kpknl_dilan'
+
+===============================================
+show grants for root@localhost;
+UPDATE `views` p SET definer = 'root@localhost' WHERE definer='dilanid@localhost'
+ALTER TABLE `views` SET definer = 'root@localhost' WHERE definer='dilanid@localhost'
+ubah saja definer di file mysql nya
+
+
+
+===============================================
+tambahan kolom tabel obyek lelang untuk rincian bphtb
+ALTER TABLE `lelang_obyek` 
+ADD `letak_tanah_bangunan` TEXT NULL ,
+ADD `status_tanah_bangunan` VARCHAR(200) NULL ,
+ADD `nama_debitur` VARCHAR(100) NULL , 
+ADD `alamat_debitur` TEXT NULL , 
+ADD `npwp_debitur` VARCHAR(15) NULL , 
+ADD `luas_tanah` DECIMAL(10,2) NULL , 
+ADD `luas_bangunan` DECIMAL(10,2) NULL , 
+ADD `nop` VARCHAR(18) NULL , 
+ADD `kab_kota` INT NULL , ADD INDEX (`kab_kota`) ;
+ADD `jenis_obyek` INT NULL , ADD INDEX (`jenis_obyek`) ;
+
+===============================================
+
+daftar nomor rl per tahun
+CREATE OR REPLACE VIEW
+daftar_obyek_rl
+as select 
+a.id, a.rl_no,
+YEAR(b.rl_tgl) tahun
+FROM
+lelang_obyek as a,
+lelang_risalah as b
+WHERE
+a.rl_no = b.rl_no
+
+===============================================
+ALTER TABLE `lelang_obyek` ADD `id_rl` INT NULL AFTER `rl_no`, ADD INDEX (`id_rl`) ;
+
+ubah jadi id_rl
+UPDATE `lelang_obyek` 
+SET `id_rl`=
+(select id from lelang_risalah where rl_no = '840')
+WHERE `rl_no` = '840'
+
+
+UPDATE `lelang_obyek` SET `id_rl`= (select id from lelang_risalah where rl_no = lelang_obyek.rl_no) WHERE 1
+
+UPDATE `lelang_obyek` SET `rl_no`= lelang_obyek.id_rl WHERE 1
+
+kemudian
+ubah metode pengisian rl di tombol ambil objek lelang
+
+
